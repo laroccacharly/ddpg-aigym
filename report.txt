@@ -1,0 +1,159 @@
+================================================================================
+Input tree: 'old_code'
+================================================================================
+--------------------------------------------------------------------------------
+Processing file 'old_code/tensorflow_grad_inverter.py'
+ outputting to 'coolcode-upgraded/tensorflow_grad_inverter.py'
+--------------------------------------------------------------------------------
+
+'old_code/tensorflow_grad_inverter.py' Line 23
+--------------------------------------------------------------------------------
+
+Renamed function 'tf.select' to 'tf.where'
+Renamed function 'tf.mul' to 'tf.multiply'
+Renamed function 'tf.mul' to 'tf.multiply'
+
+    Old:         self.grad_inverter = tf.select(tf.greater(self.act_grad, self.zeros_act_grad_filter), tf.mul(self.act_grad, self.pdiff_max), tf.mul(self.act_grad, self.pdiff_min))        
+                                      ~~~~~~~~~                                                        ~~~~~~                                 ~~~~~~                                         
+    New:         self.grad_inverter = tf.where(tf.greater(self.act_grad, self.zeros_act_grad_filter), tf.multiply(self.act_grad, self.pdiff_max), tf.multiply(self.act_grad, self.pdiff_min))        
+                                      ~~~~~~~~                                                        ~~~~~~~~~~~                                 ~~~~~~~~~~~                                         
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/ou_noise.py'
+ outputting to 'coolcode-upgraded/ou_noise.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/actor_net.py'
+ outputting to 'coolcode-upgraded/actor_net.py'
+--------------------------------------------------------------------------------
+
+'old_code/actor_net.py' Line 32
+--------------------------------------------------------------------------------
+
+Renamed function 'tf.initialize_all_variables' to 'tf.global_variables_initializer'
+
+    Old:             self.sess.run(tf.initialize_all_variables())    
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+    New:             self.sess.run(tf.global_variables_initializer())    
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/critic_net_bn.py'
+ outputting to 'coolcode-upgraded/critic_net_bn.py'
+--------------------------------------------------------------------------------
+
+'old_code/critic_net_bn.py' Line 76
+--------------------------------------------------------------------------------
+
+Renamed function 'tf.initialize_all_variables' to 'tf.global_variables_initializer'
+
+    Old:             self.sess.run(tf.initialize_all_variables())
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    New:             self.sess.run(tf.global_variables_initializer())
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/__init__.py'
+ outputting to 'coolcode-upgraded/__init__.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/actor_net_bn.py'
+ outputting to 'coolcode-upgraded/actor_net_bn.py'
+--------------------------------------------------------------------------------
+
+'old_code/actor_net_bn.py' Line 66
+--------------------------------------------------------------------------------
+
+Renamed function 'tf.initialize_all_variables' to 'tf.global_variables_initializer'
+
+    Old:             self.sess.run(tf.initialize_all_variables())    
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+    New:             self.sess.run(tf.global_variables_initializer())    
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/ddpg.py'
+ outputting to 'coolcode-upgraded/ddpg.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/tensorflow_session.py'
+ outputting to 'coolcode-upgraded/tensorflow_session.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/result_plot.py'
+ outputting to 'coolcode-upgraded/result_plot.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/main.py'
+ outputting to 'coolcode-upgraded/main.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/critic_net.py'
+ outputting to 'coolcode-upgraded/critic_net.py'
+--------------------------------------------------------------------------------
+
+'old_code/critic_net.py' Line 39
+--------------------------------------------------------------------------------
+
+Renamed function 'tf.initialize_all_variables' to 'tf.global_variables_initializer'
+
+    Old:             self.sess.run(tf.initialize_all_variables())
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    New:             self.sess.run(tf.global_variables_initializer())
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/batch_normalization/__init__.py'
+ outputting to 'coolcode-upgraded/batch_normalization/__init__.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/batch_normalization/batch_norm.py'
+ outputting to 'coolcode-upgraded/batch_normalization/batch_norm.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+Processing file 'old_code/tf.gradients_eg/tf.gradients_eg.py'
+ outputting to 'coolcode-upgraded/tf.gradients_eg/tf.gradients_eg.py'
+--------------------------------------------------------------------------------
+
+'old_code/tf.gradients_eg/tf.gradients_eg.py' Line 34
+--------------------------------------------------------------------------------
+
+Renamed function 'tf.mul' to 'tf.multiply'
+
+    Old: pred = tf.add(tf.mul(X, W), b)
+                       ~~~~~~           
+    New: pred = tf.add(tf.multiply(X, W), b)
+                       ~~~~~~~~~~~           
+
+'old_code/tf.gradients_eg/tf.gradients_eg.py' Line 45
+--------------------------------------------------------------------------------
+
+Renamed function 'tf.initialize_all_variables' to 'tf.global_variables_initializer'
+
+    Old: init = tf.initialize_all_variables()
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~   
+    New: init = tf.global_variables_initializer()
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   
+
+

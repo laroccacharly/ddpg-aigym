@@ -63,7 +63,7 @@ class ActorNet_bn:
             
             self.optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE,epsilon=1e-08).apply_gradients(zip(self.parameters_gradients,self.actor_parameters))  
             #initialize all tensor variable parameters:
-            self.sess.run(tf.global_variables_initializer())    
+            self.sess.run(tf.initialize_all_variables())    
             
             #To make sure actor and target have same intial parmameters copy the parameters:
             # copy target parameters

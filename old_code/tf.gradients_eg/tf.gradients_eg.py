@@ -31,7 +31,7 @@ W = tf.Variable(0.1, name="weight")
 b = tf.Variable(0.1, name="bias")
 
 # Construct a linear model
-pred = tf.add(tf.multiply(X, W), b)
+pred = tf.add(tf.mul(X, W), b)
 
 # Mean squared error
 cost = tf.reduce_sum(tf.pow(pred-Y, 2))/(2*n_samples)
@@ -42,7 +42,7 @@ gradient = tf.gradients(cost,params)
 opt = tf.train.GradientDescentOptimizer(learning_rate)
 update=opt.apply_gradients(zip(gradient,params))
 # Initializing the variables
-init = tf.global_variables_initializer()
+init = tf.initialize_all_variables()
 
 
 # Launch the graph

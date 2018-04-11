@@ -73,7 +73,7 @@ class CriticNet_bn:
             self.check_fl = self.action_gradients             
             
             #initialize all tensor variable parameters:
-            self.sess.run(tf.global_variables_initializer())
+            self.sess.run(tf.initialize_all_variables())
             
             #To initialize critic and target with the same values:
             # copy target parameters
