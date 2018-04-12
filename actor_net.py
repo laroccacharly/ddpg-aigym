@@ -1,14 +1,121 @@
+import pdb
+
 import numpy as np
 import tensorflow as tf
 import math
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+import copy
 
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 64
 TAU = 0.001
+ACTOR_LR = LEARNING_RATE
+
+INIT_PARAM_MIN = -3e-3
+INIT_PARAM_MAX = 3e-3
+HIDDEN_SIZE_1 = 400
+HIDDEN_SIZE_2 = 300
+
+def np_to_var(x):
+    x = np.array(x)
+    x = torch.Tensor(x)
+
+    if torch.cuda.is_available():
+        x.cuda()
+
+    return Variable(x)
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+
+        if torch.cuda.is_available():
+            print('Gpu active')
+            self.cuda()
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+    def forward_to_numpy(self, *args):
+        return self.forward(*args).data.cpu().numpy()
+
+    def init_params_from_model(self, model):
+        self.load_state_dict(model.state_dict())
+
+    def update_params_from_model(self, model, tau):
+        for param1, param2 in zip(self.parameters(), model.parameters()):
+            param1.data = tau * param2.data + (1 - tau) * param1.data
+
+
+class ActorNetPy(Net):
+    def __init__(self, nb_features, nb_hidden_1, nb_hidden_2, learning_rate, batch_norm=False):
+        super(ActorNetPy, self).__init__()
+
+        self.relu = nn.ReLU()
+        self.batch_norm_1 = nn.BatchNorm1d(nb_features)
+        self.linear_1 = nn.Linear(nb_features, nb_hidden_1)
+        # self.linear_1.weight.data.uniform_(INIT_PARAM_MIN, INIT_PARAM_MAX)
+        self.batch_norm_2 = nn.BatchNorm1d(nb_hidden_1)
+        self.linear_2 = nn.Linear(nb_hidden_1, nb_hidden_2)
+        self.batch_norm_3 = nn.BatchNorm1d(nb_hidden_2)
+        self.linear_3 = nn.Linear(nb_hidden_2, 1)
+        self.tanh = nn.Tanh()
+
+        if batch_norm:
+            self.layers = [
+                self.batch_norm_1,
+                self.linear_1,
+                self.relu,
+                self.batch_norm_2,
+                self.linear_2,
+                self.relu,
+                self.batch_norm_3,
+                self.linear_3,
+                self.tanh
+            ]
+        else:
+            self.layers = [
+                self.linear_1,
+                self.relu,
+                self.linear_2,
+                self.relu,
+                self.linear_3,
+                self.tanh
+            ]
+
+
+        self.opt = torch.optim.Adam(self.parameters(), lr=learning_rate)
+
+
+
+def weight_init(m):
+    #pdb.set_trace()
+    if isinstance(m, nn.Linear):
+        #torch.nn.init.xavier_uniform(m.weight)
+        m.weight.data.uniform_(INIT_PARAM_MIN, INIT_PARAM_MAX)
+
+
 class ActorNet:
     """ Actor Network Model of DDPG Algorithm """
     
-    def __init__(self,num_states,num_actions):
+    def __init__(self,num_states, num_actions):
+
+
+        self.actor = ActorNetPy(nb_features=num_states, nb_hidden_1=HIDDEN_SIZE_1, nb_hidden_2=HIDDEN_SIZE_2,
+                         learning_rate=ACTOR_LR)
+        self.actor.apply(weight_init)
+        self.target_actor = ActorNetPy(nb_features=num_states, nb_hidden_1=HIDDEN_SIZE_1, nb_hidden_2=HIDDEN_SIZE_2, learning_rate=ACTOR_LR)
+        #copy.deepcopy(self.actor)
+
+        self.target_actor.init_params_from_model(self.actor)
+
+
+        """
+        
         self.g=tf.Graph()
         with self.g.as_default():
             self.sess = tf.InteractiveSession()
@@ -48,11 +155,10 @@ class ActorNet:
                 self.t_B2_a.assign(TAU*self.B2_a+(1-TAU)*self.t_B2_a),
                 self.t_W3_a.assign(TAU*self.W3_a+(1-TAU)*self.t_W3_a),
                 self.t_B3_a.assign(TAU*self.B3_a+(1-TAU)*self.t_B3_a)]
-        
+    
 
 
     def create_actor_net(self, num_states=4, num_actions=1):
-        """ Network that takes states and return action """
         N_HIDDEN_1 = 400
         N_HIDDEN_2 = 300
         actor_state_in = tf.placeholder("float",[None,num_states])    
@@ -67,19 +173,31 @@ class ActorNet:
         H2_a=tf.nn.tanh(tf.matmul(H1_a,W2_a)+B2_a)
         actor_model=tf.matmul(H2_a,W3_a) + B3_a
         return W1_a, B1_a, W2_a, B2_a, W3_a, B3_a, actor_state_in, actor_model
+                """
+
+        
+    def evaluate_actor(self, state):
+        state = np_to_var(state)
+        return self.actor.forward_to_numpy(state)
+        #return self.sess.run(self.actor_model, feed_dict={self.actor_state_in:state_t})
         
         
-    def evaluate_actor(self,state_t):
-        return self.sess.run(self.actor_model, feed_dict={self.actor_state_in:state_t})        
+    def evaluate_target_actor(self, state):
+        state = np_to_var(state)
+        return self.target_actor.forward_to_numpy(state)
+        #return self.sess.run(self.t_actor_model, feed_dict={self.t_actor_state_in: state_t_1})
         
-        
-    def evaluate_target_actor(self,state_t_1):
-        return self.sess.run(self.t_actor_model, feed_dict={self.t_actor_state_in: state_t_1})
-        
-    def train_actor(self,actor_state_in,q_gradient_input):
-        self.sess.run(self.optimizer, feed_dict={ self.actor_state_in: actor_state_in, self.q_gradient_input: q_gradient_input})
-    
+    def train_actor(self, state, q_gradient_input):
+        state = np_to_var(state)
+        q_gradient_input = np_to_var(q_gradient_input)
+
+        actions = self.actor(state)
+        actions.backward(-q_gradient_input)
+        self.actor.opt.step()
+        self.actor.opt.zero_grad()
+
     def update_target_actor(self):
-        self.sess.run(self.update_target_actor_op)    
+        self.target_actor.update_params_from_model(self.actor, TAU)
+
 
         

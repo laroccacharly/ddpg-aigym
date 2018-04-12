@@ -11,7 +11,7 @@ episodes=10000
 is_batch_norm = False #batch normalization switch
 
 def main():
-    experiment= 'Pendulum-v0' #specify environments here
+    experiment= 'MountainCarContinuous-v0' #specify environments here
     env= gym.make(experiment)
     steps= env.spec.timestep_limit #steps per episode    
     assert isinstance(env.observation_space, Box), "observation space must be continuous"
@@ -38,12 +38,12 @@ def main():
         reward_per_episode = 0
         for t in range(steps):
             #rendering environmet (optional)            
-            env.render()
+            #env.render()
             x = observation
             action = agent.evaluate_actor(np.reshape(x,[1,num_states]))
             noise = exploration_noise.noise()
             action = action[0] + noise #Select action according to current policy and exploration noise
-            print ("Action at step", t ," :",action,"\n")
+            #print ("Action at step", t ," :",action,"\n")
             
             observation,reward,done,info=env.step(action)
             
