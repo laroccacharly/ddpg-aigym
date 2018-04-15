@@ -1,10 +1,117 @@
+
 import numpy as np
+import pdb
 import tensorflow as tf
 import math
+
+from actor_net import Net, weight_init, np_to_var
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
 
 TAU = 0.001
 LEARNING_RATE= 0.001
 BATCH_SIZE = 64
+CRITIC_WEIGHT_DECAY = 1e-2
+HIDDEN_SIZE_1 = 400
+HIDDEN_SIZE_2 = 300
+CRITIC_LR = 1e-3
+
+
+class CriticNetPy(Net):
+    def __init__(self, nb_features, nb_actions, nb_hidden_1, nb_hidden_2, learning_rate, batch_norm=False):
+        super(CriticNetPy, self).__init__()
+
+        self.relu = nn.ReLU()
+        self.batch_norm_1 = nn.BatchNorm1d(nb_features)
+        self.linear_1 = nn.Linear(nb_features, nb_hidden_1)
+        self.batch_norm_2 = nn.BatchNorm1d(nb_hidden_1)
+        self.linear_2 = nn.Linear(nb_hidden_1 + nb_actions, nb_hidden_2)
+        self.batch_norm_3 = nn.BatchNorm1d(nb_hidden_2)
+        self.linear_3 = nn.Linear(nb_hidden_2, 1)
+
+
+        if batch_norm:
+            self.layers_1= [
+                self.batch_norm_1,
+                self.linear_1,
+                self.relu,
+                self.batch_norm_2,
+
+            ]
+            self.layers_2 = [
+                self.linear_2,
+                self.relu,
+                self.batch_norm_3,
+                self.linear_3
+            ]
+        else:
+            self.layers_1 = [
+                self.linear_1,
+                self.relu,
+
+            ]
+            self.layers_2 = [
+                self.linear_2,
+                self.relu,
+                self.linear_3
+            ]
+
+        self.opt = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=CRITIC_WEIGHT_DECAY)
+
+    def forward(self, states, actions):
+        #x = torch.cat((states, actions), dim=1)
+        #x = np.array([np.concatenate((state, action)) for state, action in zip(states, actions)])
+        x = states
+        for layer in self.layers_1:
+            x = layer(x)
+
+        x = torch.cat((x, actions), dim=1)
+        for layer in self.layers_2:
+            x = layer(x)
+
+        return x
+
+
+class CriticNetNew:
+    """ Critic Q value model of the DDPG algorithm """
+
+    def __init__(self, num_states, num_actions):
+
+
+        self.critic = CriticNetPy(nb_features=num_states, nb_actions=num_actions , nb_hidden_1=HIDDEN_SIZE_1, nb_hidden_2=HIDDEN_SIZE_2,
+                         learning_rate=CRITIC_LR)
+        self.critic.apply(weight_init)
+        self.target_critic = CriticNetPy(nb_features=num_states, nb_actions=num_actions, nb_hidden_1=HIDDEN_SIZE_1, nb_hidden_2=HIDDEN_SIZE_2, learning_rate=CRITIC_LR)
+
+        self.target_critic.init_params_from_model(self.critic)
+
+    def evaluate_target_critic(self, state, action):
+        state, action = np_to_var(state), np_to_var(action)
+        return self.target_critic(state, action)
+
+    def train_critic(self, state, action, y_i_batch):
+        state, action, target_action_values = np_to_var(state), np_to_var(action), np_to_var(y_i_batch)
+
+        action_values = self.critic(state, action)
+        mse_loss_calculator = nn.MSELoss()
+        loss_critic = mse_loss_calculator(action_values, target_action_values) # Detach because no grad on target
+        loss_critic.backward()
+        self.critic.opt.step()
+        self.critic.zero_grad()
+
+    def compute_delQ_a(self, state, action):
+        state, action = np_to_var(state), np_to_var(action)
+        action.requires_grad = True
+        action_values = self.critic(state, action)
+        loss = action_values.sum()
+        loss.backward()
+        return action.grad.data.cpu().numpy()
+
+    def update_target_critic(self):
+        self.target_critic.update_params_from_model(self.critic, TAU)
+
+
 class CriticNet:
     """ Critic Q value model of the DDPG algorithm """
     def __init__(self,num_states,num_actions):
@@ -31,7 +138,7 @@ class CriticNet:
             #self.action_gradients=tf.gradients(self.critic_q_model,self.critic_action_in)
             #from simple actor net:
             self.act_grad_v = tf.gradients(self.critic_q_model, self.critic_action_in)
-            self.action_gradients = [self.act_grad_v[0]/tf.to_float(tf.shape(self.act_grad_v[0])[0])] #this is just divided by batch size
+            self.action_gradients = [self.act_grad_v[0]/tf.to_float(tf.shape(self.act_grad_v[0])[0])][0] #this is just divided by batch size
             #from simple actor net:
             self.check_fl = self.action_gradients             
                        
@@ -90,12 +197,18 @@ class CriticNet:
         return self.sess.run(self.t_critic_q_model, feed_dict={self.t_critic_state_in: state_t_1, self.t_critic_action_in: action_t_1})    
         
     def compute_delQ_a(self,state_t,action_t):
-#        print '\n'
-#        print 'check grad number'        
-#        ch= self.sess.run(self.check_fl, feed_dict={self.critic_state_in: state_t,self.critic_action_in: action_t})
-#        print len(ch)
-#        print len(ch[0])        
-#        raw_input("Press Enter to continue...")        
+        """
+        print ('\n')
+        print('check grad number'   )
+
+        ch, act_grad_v= self.sess.run([self.check_fl, self.act_grad_v], feed_dict={self.critic_state_in: state_t,self.critic_action_in: action_t})
+        print(act_grad_v)
+
+        print(ch)
+        print(len(ch))
+        print (len(ch[0]) )
+        input('Press Enter to continue...')
+        """
         return self.sess.run(self.action_gradients, feed_dict={self.critic_state_in: state_t,self.critic_action_in: action_t})
 
     def update_target_critic(self):

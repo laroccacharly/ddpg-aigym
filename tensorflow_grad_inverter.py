@@ -1,5 +1,6 @@
 #Reference:
 #https://github.com/MOCR/
+import pdb
 
 import tensorflow as tf
 
@@ -23,6 +24,4 @@ class grad_inverter:
         self.grad_inverter = tf.where(tf.greater(self.act_grad, self.zeros_act_grad_filter), tf.multiply(self.act_grad, self.pdiff_max), tf.multiply(self.act_grad, self.pdiff_min))        
     
     def invert(self, grad, action):
-
-        
-        return self.sess.run(self.grad_inverter, feed_dict = {self.action_input: action, self.act_grad: grad[0]})
+        return self.sess.run(self.grad_inverter, feed_dict = {self.action_input: action, self.act_grad: grad})
