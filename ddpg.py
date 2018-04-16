@@ -1,4 +1,6 @@
 import numpy as np
+import pdb
+
 from actor_net import ActorNet
 from critic_net import CriticNet
 from actor_net_bn import ActorNet_bn
@@ -7,7 +9,8 @@ from collections import deque
 from gym.spaces import Box, Discrete
 import random
 from tensorflow_grad_inverter import grad_inverter
-
+np.random.seed(0)
+random.seed(0)
 REPLAY_MEMORY_SIZE = 10000
 BATCH_SIZE = 64
 GAMMA=0.99
@@ -79,7 +82,8 @@ class DDPG:
         self.minibatches()
         self.action_t_1_batch = self.actor_net.evaluate_target_actor(self.state_t_1_batch)
         #Q'(s_i+1,a_i+1)        
-        q_t_1 = self.critic_net.evaluate_target_critic(self.state_t_1_batch,self.action_t_1_batch) 
+        q_t_1 = self.critic_net.evaluate_target_critic(self.state_t_1_batch,self.action_t_1_batch)
+        #pdb.set_trace()
         self.y_i_batch=[]         
         for i in range(0,BATCH_SIZE):
                            

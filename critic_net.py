@@ -7,8 +7,13 @@ import math
 from actor_net import Net, weight_init, np_to_var
 import torch
 import torch.nn as nn
+from math import sqrt
 from torch.autograd import Variable
+from tensorboardX import SummaryWriter
+writer = SummaryWriter()
 
+torch.manual_seed(0)
+tf.set_random_seed(0)
 TAU = 0.001
 LEARNING_RATE= 0.001
 BATCH_SIZE = 64
@@ -25,10 +30,13 @@ class CriticNetPy(Net):
         self.relu = nn.ReLU()
         self.batch_norm_1 = nn.BatchNorm1d(nb_features)
         self.linear_1 = nn.Linear(nb_features, nb_hidden_1)
+        self.linear_1.weight.data.uniform_(-1/sqrt(nb_features), 1/sqrt(nb_features))
         self.batch_norm_2 = nn.BatchNorm1d(nb_hidden_1)
         self.linear_2 = nn.Linear(nb_hidden_1 + nb_actions, nb_hidden_2)
+        self.linear_2.weight.data.uniform_(-1/sqrt(nb_hidden_1), 1/sqrt(nb_hidden_1))
         self.batch_norm_3 = nn.BatchNorm1d(nb_hidden_2)
         self.linear_3 = nn.Linear(nb_hidden_2, 1)
+        self.linear_3.weight.data.uniform_(-3e-3, 3e-3)
 
 
         if batch_norm:
@@ -58,6 +66,7 @@ class CriticNetPy(Net):
             ]
 
         self.opt = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=CRITIC_WEIGHT_DECAY)
+        self.step_count = 0
 
     def forward(self, states, actions):
         #x = torch.cat((states, actions), dim=1)
@@ -72,23 +81,33 @@ class CriticNetPy(Net):
 
         return x
 
+    def make_summary(self):
+        if True:
+         return
+        writer.add_scalar('critic/linear_1/mean', self.linear_1.weight.mean().data[0], self.step_count)
+        writer.add_scalar('critic/linear_2/mean', self.linear_2.weight.mean().data[0], self.step_count)
+        writer.add_scalar('critic/linear_3/mean', self.linear_3.weight.mean().data[0], self.step_count)
+        writer.add_scalar('critic/linear_1/std', self.linear_1.weight.std().data[0], self.step_count)
+        writer.add_scalar('critic/linear_2/std', self.linear_2.weight.std().data[0], self.step_count)
+        writer.add_scalar('critic/linear_3/std', self.linear_3.weight.std().data[0], self.step_count)
+        self.step_count += 1
 
-class CriticNetNew:
+
+class CriticNet:
     """ Critic Q value model of the DDPG algorithm """
 
     def __init__(self, num_states, num_actions):
 
-
         self.critic = CriticNetPy(nb_features=num_states, nb_actions=num_actions , nb_hidden_1=HIDDEN_SIZE_1, nb_hidden_2=HIDDEN_SIZE_2,
                          learning_rate=CRITIC_LR)
-        self.critic.apply(weight_init)
+        #self.critic.apply(weight_init)
         self.target_critic = CriticNetPy(nb_features=num_states, nb_actions=num_actions, nb_hidden_1=HIDDEN_SIZE_1, nb_hidden_2=HIDDEN_SIZE_2, learning_rate=CRITIC_LR)
 
         self.target_critic.init_params_from_model(self.critic)
 
     def evaluate_target_critic(self, state, action):
         state, action = np_to_var(state), np_to_var(action)
-        return self.target_critic(state, action)
+        return self.target_critic.forward_to_numpy(state, action)
 
     def train_critic(self, state, action, y_i_batch):
         state, action, target_action_values = np_to_var(state), np_to_var(action), np_to_var(y_i_batch)
@@ -97,8 +116,10 @@ class CriticNetNew:
         mse_loss_calculator = nn.MSELoss()
         loss_critic = mse_loss_calculator(action_values, target_action_values) # Detach because no grad on target
         loss_critic.backward()
+        #pdb.set_trace()
         self.critic.opt.step()
         self.critic.zero_grad()
+        self.critic.make_summary()
 
     def compute_delQ_a(self, state, action):
         state, action = np_to_var(state), np_to_var(action)
@@ -112,7 +133,7 @@ class CriticNetNew:
         self.target_critic.update_params_from_model(self.critic, TAU)
 
 
-class CriticNet:
+class CriticNetOld:
     """ Critic Q value model of the DDPG algorithm """
     def __init__(self,num_states,num_actions):
         

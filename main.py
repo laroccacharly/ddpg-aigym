@@ -7,12 +7,14 @@ import numpy as np
 from ddpg import DDPG
 from ou_noise import OUNoise
 #specify parameters here:
-episodes=10000
+episodes=1
 is_batch_norm = False #batch normalization switch
+np.random.seed(0)
 
 def main():
     experiment= 'MountainCarContinuous-v0' #specify environments here
     env= gym.make(experiment)
+    env.seed(0)
     steps= env.spec.timestep_limit #steps per episode    
     assert isinstance(env.observation_space, Box), "observation space must be continuous"
     assert isinstance(env.action_space, Box), "action space must be continuous"
@@ -43,8 +45,8 @@ def main():
             action = agent.evaluate_actor(np.reshape(x,[1,num_states]))
             noise = exploration_noise.noise()
             action = action[0] + noise #Select action according to current policy and exploration noise
-            print ("Action at step", t ," :",action,"\n")
-            
+            #print ("Action at step", t ," :",action,"\n")
+
             observation,reward,done,info=env.step(action)
             
             #add s_t,s_t+1,action,reward to experience memory

@@ -7,7 +7,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import copy
-
+torch.manual_seed(0)
+tf.set_random_seed(1)
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 64
 TAU = 0.001
