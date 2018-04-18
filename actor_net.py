@@ -59,12 +59,13 @@ class ActorNetPy(Net):
         self.relu = nn.ReLU()
         self.batch_norm_1 = nn.BatchNorm1d(nb_features)
         self.linear_1 = nn.Linear(nb_features, nb_hidden_1)
-        # self.linear_1.weight.data.uniform_(INIT_PARAM_MIN, INIT_PARAM_MAX)
+        #self.linear_1.weight.data.uniform_(INIT_PARAM_MIN, INIT_PARAM_MAX)
         self.batch_norm_2 = nn.BatchNorm1d(nb_hidden_1)
         self.linear_2 = nn.Linear(nb_hidden_1, nb_hidden_2)
         self.batch_norm_3 = nn.BatchNorm1d(nb_hidden_2)
         self.linear_3 = nn.Linear(nb_hidden_2, 1)
         self.tanh = nn.Tanh()
+        self.soft = nn.Softplus()
 
         if batch_norm:
             self.layers = [
@@ -81,11 +82,11 @@ class ActorNetPy(Net):
         else:
             self.layers = [
                 self.linear_1,
-                self.relu,
+                self.soft,
                 self.linear_2,
-                self.relu,
+                self.tanh,
                 self.linear_3,
-                self.tanh
+                #self.tanh
             ]
 
 
@@ -129,6 +130,7 @@ class ActorNet:
         actions.backward(-q_gradient_input)
         self.actor.opt.step()
         self.actor.opt.zero_grad()
+        return
 
     def update_target_actor(self):
         self.target_actor.update_params_from_model(self.actor, TAU)
@@ -207,6 +209,7 @@ class ActorNetOld:
     def train_actor(self, actor_state_in, q_gradient_input):
         self.sess.run(self.optimizer,
                       feed_dict={self.actor_state_in: actor_state_in, self.q_gradient_input: q_gradient_input})
+
 
     def update_target_actor(self):
         self.sess.run(self.update_target_actor_op)

@@ -6,12 +6,14 @@ from gym.spaces import Box, Discrete
 import numpy as np
 from ddpg import DDPG
 from ou_noise import OUNoise
+from tensorboardX import SummaryWriter
+writer = SummaryWriter()
 #specify parameters here:
-episodes=1
+episodes=10
 is_batch_norm = False #batch normalization switch
 np.random.seed(0)
-
 def main():
+    global_step = 0
     experiment= 'MountainCarContinuous-v0' #specify environments here
     env= gym.make(experiment)
     env.seed(0)
@@ -43,6 +45,8 @@ def main():
             #env.render()
             x = observation
             action = agent.evaluate_actor(np.reshape(x,[1,num_states]))
+            writer.add_scalar('action', action, global_step=global_step)
+            global_step += 1
             noise = exploration_noise.noise()
             action = action[0] + noise #Select action according to current policy and exploration noise
             #print ("Action at step", t ," :",action,"\n")
@@ -53,7 +57,7 @@ def main():
             agent.add_experience(x,observation,action,reward,done)
             #train critic and actor network
             if counter > 64: 
-                agent.train()
+                agent.train(global_step, writer)
             reward_per_episode+=reward
             counter+=1
             #check if episode ends:

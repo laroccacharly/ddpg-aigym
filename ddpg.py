@@ -77,7 +77,7 @@ class DDPG:
         self.done_batch = np.array(self.done_batch)  
                   
                  
-    def train(self):
+    def train(self, global_step, writer):
         #sample a random minibatch of N transitions from R
         self.minibatches()
         self.action_t_1_batch = self.actor_net.evaluate_target_actor(self.state_t_1_batch)
@@ -97,7 +97,7 @@ class DDPG:
         self.y_i_batch = np.reshape(self.y_i_batch,[len(self.y_i_batch),1])
         
         # Update critic by minimizing the loss
-        self.critic_net.train_critic(self.state_t_batch, self.action_batch,self.y_i_batch)
+        loss = self.critic_net.train_critic(self.state_t_batch, self.action_batch,self.y_i_batch)
         
         # Update actor proportional to the gradients:
         action_for_delQ = self.evaluate_actor(self.state_t_batch) 
@@ -114,7 +114,10 @@ class DDPG:
         # Update target Critic and actor network
         self.critic_net.update_target_critic()
         self.actor_net.update_target_actor()
-        
+
+        writer.add_scalar('loss/critic', loss.sum(), global_step)
+        writer.add_scalar('del_q_a/mean', self.del_Q_a.mean(), global_step)
+        writer.add_scalar('del_q_a/std', self.del_Q_a.std(), global_step)
                 
         
         

@@ -28,10 +28,12 @@ class CriticNetPy(Net):
         super(CriticNetPy, self).__init__()
 
         self.relu = nn.ReLU()
+        self.soft = nn.Softplus()
+        self.tanh = nn.Tanh()
         self.batch_norm_1 = nn.BatchNorm1d(nb_features)
         self.linear_1 = nn.Linear(nb_features, nb_hidden_1)
         self.linear_1.weight.data.uniform_(-1/sqrt(nb_features), 1/sqrt(nb_features))
-        self.batch_norm_2 = nn.BatchNorm1d(nb_hidden_1)
+        self.batch_norm_2 = nn.BatchNorm1d(nb_hidden_1 + nb_actions)
         self.linear_2 = nn.Linear(nb_hidden_1 + nb_actions, nb_hidden_2)
         self.linear_2.weight.data.uniform_(-1/sqrt(nb_hidden_1), 1/sqrt(nb_hidden_1))
         self.batch_norm_3 = nn.BatchNorm1d(nb_hidden_2)
@@ -120,6 +122,7 @@ class CriticNet:
         self.critic.opt.step()
         self.critic.zero_grad()
         self.critic.make_summary()
+        return loss_critic.data
 
     def compute_delQ_a(self, state, action):
         state, action = np_to_var(state), np_to_var(action)
@@ -211,8 +214,8 @@ class CriticNetOld:
         return W1_c, B1_c, W2_c, W2_action_c, B2_c, W3_c, B3_c, critic_q_model, critic_state_in, critic_action_in
     
     def train_critic(self, state_t_batch, action_batch, y_i_batch ):
-        self.sess.run(self.optimizer, feed_dict={self.critic_state_in: state_t_batch, self.critic_action_in:action_batch, self.q_value_in: y_i_batch})
-             
+        _ , loss= self.sess.run([self.optimizer, self.cost], feed_dict={self.critic_state_in: state_t_batch, self.critic_action_in:action_batch, self.q_value_in: y_i_batch})
+        return loss
     
     def evaluate_target_critic(self,state_t_1,action_t_1):
         return self.sess.run(self.t_critic_q_model, feed_dict={self.t_critic_state_in: state_t_1, self.t_critic_action_in: action_t_1})    

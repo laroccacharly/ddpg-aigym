@@ -4,7 +4,9 @@
 
 import numpy as np
 import numpy.random as nr
-np.random.seed(0)
+
+#np.random.seed(0)
+
 class OUNoise:
     """ docstring for OUNoise """
     def __init__(self,action_dimension,mu=0, theta=0.15, sigma=0.3):
